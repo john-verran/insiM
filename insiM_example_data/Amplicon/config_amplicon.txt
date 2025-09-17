@@ -3,7 +3,7 @@ assay = Amplicon
 bam = amplicon.chr22.bam
 target = targets_amplicons.bed
 mutation = del
-genome = rcsb_pdb_20250917042659.fasta
+genome = Homo_sapiens.GRCh37.dna.chromosome.22.fasta
 
 # Conditional/optional arguments.
 ampliconbed = amplicons.bed

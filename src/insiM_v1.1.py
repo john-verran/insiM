@@ -844,7 +844,18 @@ def configParser(file):
         params["bam"] = str(params["bam"])
         params["target"] = str(params["target"])
         params["mutation"] = str(params["mutation"])
-        params["genome"] = str(params["genome"])
+        # Handle genome file path - look in _fasta folder if not absolute path
+        genome_path = str(params["genome"])
+        if not os.path.isabs(genome_path) and not os.path.exists(genome_path):
+            # Look for the file in the _fasta folder relative to the project root
+            # The _fasta folder is at the project root level
+            config_dir = os.path.dirname(os.path.abspath(file))
+            # Go up from insiM_example_data/Amplicon to insiM_example_data, then to project root
+            project_root = os.path.dirname(os.path.dirname(config_dir))
+            fasta_path = os.path.join(project_root, "_fasta", genome_path)
+            if os.path.exists(fasta_path):
+                genome_path = fasta_path
+        params["genome"] = genome_path
         if params.get("ampliconbed"):
             params["ampliconbed"] = str(params["ampliconbed"])
         if params.get("read"):
