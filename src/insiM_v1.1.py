@@ -131,6 +131,9 @@ def main(
         if line.startswith(">"):
             current_chrom = line.rstrip().split(">")[1]
             current_chrom = current_chrom.split(" ")[0]
+            # Add 'chr' prefix to match BAM file chromosome naming convention
+            if not current_chrom.startswith("chr"):
+                current_chrom = "chr" + current_chrom
             genome_lists[current_chrom] = []
         else:
             genome_lists[current_chrom].append(line.rstrip().upper())
