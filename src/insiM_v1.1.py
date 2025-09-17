@@ -8,7 +8,7 @@ import itertools
 import pysam
 import datetime
 from time import gmtime, strftime
-import array
+from array import array
 
 print("############################")
 print("insiM initiated.\n")
@@ -147,7 +147,13 @@ def main(
     print("Opening input and output files...")
     infile = pysam.AlignmentFile(bamfile, "rb")
     if not outputfastqname:
-        outputfilebase = bamfile.rsplit("/", 1)[1].split(".bam")[0] + "." + mutationtype
+        # Handle both cases: with path and without path
+        if "/" in bamfile:
+            outputfilebase = (
+                bamfile.rsplit("/", 1)[1].split(".bam")[0] + "." + mutationtype
+            )
+        else:
+            outputfilebase = bamfile.split(".bam")[0] + "." + mutationtype
     else:
         outputfilebase = outputfastqname
 
@@ -839,23 +845,25 @@ def configParser(file):
         params["target"] = str(params["target"])
         params["mutation"] = str(params["mutation"])
         params["genome"] = str(params["genome"])
-        if params["ampliconbed"]:
+        if params.get("ampliconbed"):
             params["ampliconbed"] = str(params["ampliconbed"])
-        if params["read"]:
+        if params.get("read"):
             params["read"] = int(params["read"])
-        if params["vaf"]:
+        if params.get("vaf"):
             params["vaf"] = float(params["vaf"])
-        if params["len"]:
+        if params.get("len"):
             params["len"] = int(params["len"])
-        if params["seq"]:
+        if params.get("seq"):
             params["seq"] = str(params["seq"])
-        if params["out"]:
+        if params.get("out"):
             params["out"] = str(params["out"])
 
         return params
 
-    except Exception:
+    except Exception as e:
         print("ERROR: Configuration file parsing error")
+        print(f"Error details: {e}")
+        return None
 
 
 def fileCheck1(file):
