@@ -1,15 +1,15 @@
 # Mandatory arguments
-assay = amplicon
+assay = Amplicon
 bam = amplicon.chr22.bam
 target = targets_amplicons.bed
 mutation = del
-genome = <Path to the genome FASTA file>
+genome = rcsb_pdb_20250917042659.fasta
 
-# Conditional/optional arguments.  
+# Conditional/optional arguments.
 ampliconbed = amplicons.bed
 read = 151
 vaf = 0.5
-len = 
-seq = 
-out = 
+len =
+seq =
+out = Output
 
