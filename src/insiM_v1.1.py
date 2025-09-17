@@ -8,7 +8,7 @@ import itertools
 import pysam
 import datetime
 from time import gmtime, strftime
-from array import *
+import array
 
 print("############################")
 print("insiM initiated.\n")
@@ -31,8 +31,8 @@ def main(
     readlength,
 ):
     # Checking if parameters and files exist
-    if (not assay in list(caseIgnore("amplicon"))) and (
-        not assay in list(caseIgnore("capture"))
+    if (assay not in list(caseIgnore("amplicon"))) and (
+        assay not in list(caseIgnore("capture"))
     ):
         print(
             " -assay (ASSAY TYPE) should be either 'amplicon' or 'capture' (for Hybrid Cature)"
@@ -51,10 +51,10 @@ def main(
         print(genomefasta + " does not exist!")
         sys.exit(1)
 
-    if not mutationtype in list(caseIgnore("mix")):
+    if mutationtype not in list(caseIgnore("mix")):
         try:
             mutfract = float(mutfraction)
-        except:
+        except Exception:
             print("Mutation fraction must be a number between 0-1")
             sys.exit(1)
 
@@ -66,7 +66,7 @@ def main(
     for item in ["snv", "ins", "del", "dup", "mix"]:
         mutType.extend(list(caseIgnore(item)))
 
-    if not mutationtype in mutType:
+    if mutationtype not in mutType:
         print(
             "Mutation type must be either snv (Single Nucleotide Variant), ins (Insertion), del (Deletion), dup (Duplication) or mix (Mixed)."
         )
@@ -79,7 +79,7 @@ def main(
         print("mutationtype is %s" % mutationtype)
         try:
             indellen = int(indellength)
-        except:
+        except Exception:
             print(
                 "Indel length specified is not an integer > 0. Default length of 10 will be used"
             )
@@ -91,14 +91,14 @@ def main(
             )
             indellen = 10
 
-    if insertsequence != None:
+    if insertsequence is not None:
         if not validSequence(insertsequence):
             print("Sequence to be inserted contains characters other than A/C/G/T")
             sys.exit(1)
 
     amplicon_flag = False  # Is this an amplicon mutation?
 
-    if assay in list(caseIgnore("amplicon")) and amplicon != None:
+    if assay in list(caseIgnore("amplicon")) and amplicon is not None:
         if not os.path.exists(amplicon):
             print(amplicon + " does not exist!")
             sys.exit(1)
@@ -110,7 +110,7 @@ def main(
     if assay in list(caseIgnore("amplicon")):
         try:
             readlength = int(readlength)
-        except:
+        except Exception:
             print("Read length must be an integer > 0")
             sys.exit(1)
 
@@ -238,8 +238,8 @@ def main(
 
         for segment in infile.fetch(chrList[i]):
             name = segment.query_name
-            if segment.is_secondary == False:
-                if segment.is_read1 == True:
+            if not segment.is_secondary:
+                if segment.is_read1:
                     R1_segments[name] = pysam.AlignedSegment()
                     R1_segments[name] = segment
                 else:
@@ -257,7 +257,7 @@ def main(
 
                 if (
                     mutationtype in list(caseIgnore("del"))
-                    and amplicon_flag == True
+                    and amplicon_flag
                     and (
                         (mutation_start + indellen)
                         >= checkPosBed(mutation_chrom, mutation_start, amplicon)[2]
@@ -269,7 +269,7 @@ def main(
                     )
                     continue
 
-                if mixed_mutation_flag == True:
+                if mixed_mutation_flag:
                     mutationtype = str(mutation_loc.split("\t")[2].split(";")[0])
 
                     mutfract = float(mutation_loc.split("\t")[2].split(";")[1])
@@ -288,7 +288,7 @@ def main(
                                     % mutation_loc
                                 )
                                 indellen = 10
-                        except:
+                        except Exception:
                             print(
                                 "Indel length for mutation locus (%s) is not an integer > 0. Default length of 10 will be used"
                                 % mutation_loc
@@ -313,7 +313,7 @@ def main(
                                 pileup_reads[pr.alignment.query_name].append(pr)
 
                         if (mutationtype in list(caseIgnore("ins"))) and (
-                            insertsequence == None
+                            insertsequence is None
                         ):
                             insertseq = "".join(
                                 random.choice(["A", "C", "G", "T"])
@@ -322,19 +322,19 @@ def main(
                         elif (
                             (
                                 (mutationtype in list(caseIgnore("snv")))
-                                and (insertsequence == None)
+                                and (insertsequence is None)
                             )
                             or (
                                 (mutationtype in list(caseIgnore("del")))
-                                and (insertsequence == None)
+                                and (insertsequence is None)
                             )
                             or (
                                 (mutationtype in list(caseIgnore("dup")))
-                                and (insertsequence == None)
+                                and (insertsequence is None)
                             )
                         ):
                             insertseq = None
-                        elif insertsequence != None:
+                        elif insertsequence is not None:
                             insertseq = str(insertsequence)
 
                         break_out_flag = False
@@ -347,7 +347,7 @@ def main(
                                         and not pileupread.is_refskip
                                     ):
                                         count2 = count2 + 1
-                                        if pileupread.alignment.is_read1 == True:
+                                        if pileupread.alignment.is_read1:
                                             original_sequence = R1_segments[
                                                 pileupread.alignment.query_name
                                             ].query_sequence
@@ -374,7 +374,7 @@ def main(
 
                                         elif (
                                             mutationtype in list(caseIgnore("ins"))
-                                            and amplicon_flag == False
+                                            and not amplicon_flag
                                         ):
                                             mutated_sequence = insert(
                                                 original_sequence,
@@ -384,7 +384,7 @@ def main(
 
                                         elif (
                                             mutationtype in list(caseIgnore("ins"))
-                                            and amplicon_flag == True
+                                            and amplicon_flag
                                         ):
                                             mutated_sequence = insertAMP(
                                                 pileupread.alignment,
@@ -414,7 +414,7 @@ def main(
                                                     pileupread.query_position :
                                                 ]
                                             )
-                                            if pileupread.alignment.is_reverse == False:
+                                            if not pileupread.alignment.is_reverse:
                                                 original_qscores = original_qscores[
                                                     :readlength
                                                 ] + array(
@@ -444,7 +444,7 @@ def main(
 
                                         elif (
                                             mutationtype in list(caseIgnore("del"))
-                                            and amplicon_flag == False
+                                            and not amplicon_flag
                                         ):
                                             try:
                                                 mutated_sequence = deletion(
@@ -458,12 +458,12 @@ def main(
                                                 original_qscores = original_qscores[
                                                     0 : len(mutated_sequence)
                                                 ]
-                                            except:
+                                            except Exception:
                                                 continue
 
                                         elif (
                                             mutationtype in list(caseIgnore("del"))
-                                            and amplicon_flag == True
+                                            and amplicon_flag
                                         ):
                                             mutated_sequence = deletionAMP(
                                                 pileupread.alignment,
@@ -487,7 +487,7 @@ def main(
                                                     ) :
                                                 ]
                                             )  # trim qc score to stay within amplicon
-                                            if pileupread.alignment.is_reverse == False:
+                                            if not pileupread.alignment.is_reverse:
                                                 original_qscores = original_qscores[
                                                     :readlength
                                                 ] + array(
@@ -517,7 +517,7 @@ def main(
 
                                         elif (
                                             mutationtype in list(caseIgnore("dup"))
-                                            and amplicon_flag == False
+                                            and not amplicon_flag
                                         ):
                                             mutated_sequence, insertseq = duplication(
                                                 original_sequence,
@@ -530,7 +530,7 @@ def main(
 
                                         elif (
                                             mutationtype in list(caseIgnore("dup"))
-                                            and amplicon_flag == True
+                                            and amplicon_flag
                                         ):
                                             mutated_sequence, insertseq = (
                                                 duplicationAMP(
@@ -562,7 +562,7 @@ def main(
                                                     pileupread.query_position :
                                                 ]
                                             )
-                                            if pileupread.alignment.is_reverse == False:
+                                            if not pileupread.alignment.is_reverse:
                                                 original_qscores = original_qscores[
                                                     :readlength
                                                 ] + array(
@@ -596,7 +596,7 @@ def main(
                                             sys.exit(1)
 
                                         # Adding mutated data to fastq dict
-                                        if pileupread.alignment.is_read1 == True:
+                                        if pileupread.alignment.is_read1:
                                             R1_segments[
                                                 pileupread.alignment.query_name
                                             ].query_sequence = mutated_sequence
@@ -618,11 +618,11 @@ def main(
 
                         # Creating VCF entry
                         if (mutationtype in list(caseIgnore("snv"))) or (
-                            (mixed_mutation_flag == True)
+                            (mixed_mutation_flag)
                             and (mutationtype in list(caseIgnore("snv")))
                         ):
                             REF = genome[mutation_chrom][mutation_start]
-                            if insertseq != None:
+                            if insertseq is not None:
                                 vcf.write(
                                     mutation_chrom
                                     + "\t"
@@ -664,7 +664,7 @@ def main(
                                 )
 
                         elif (mutationtype in list(caseIgnore("del"))) or (
-                            (mixed_mutation_flag == True)
+                            (mixed_mutation_flag)
                             and (mutationtype in list(caseIgnore("del")))
                         ):
                             REF = genome[mutation_chrom][
@@ -708,7 +708,7 @@ def main(
                             (mutationtype in list(caseIgnore("ins")))
                             or (mutationtype in list(caseIgnore("dup")))
                             or (
-                                (mixed_mutation_flag == True)
+                                (mixed_mutation_flag is True)
                                 and (
                                     (mutationtype in list(caseIgnore("ins")))
                                     or (mutationtype in list(caseIgnore("dup")))
@@ -716,7 +716,7 @@ def main(
                             )
                         ):
                             REF = genome[mutation_chrom][mutation_start]
-                            if insertseq != None:
+                            if insertseq is not None:
                                 ALT = genome[mutation_chrom][mutation_start] + insertseq
                                 vcf.write(
                                     mutation_chrom
@@ -761,7 +761,7 @@ def main(
         # Outputing results to R1 and R2 FASTQ files
         for readname in R1_segments:
             if readname in R2_segments:
-                if R1_segments[readname].is_reverse == True:
+                if R1_segments[readname].is_reverse:
                     R1sequence = revcomp(R1_segments[readname].query_sequence)
                     R1qscores = reversed_string(
                         quality_score_encoder(R1_segments[readname].query_qualities)
@@ -771,7 +771,7 @@ def main(
                     R1qscores = quality_score_encoder(
                         R1_segments[readname].query_qualities
                     )
-                if amplicon_flag == True:
+                if amplicon_flag:
                     R1sequence = R1sequence + "N" * (readlength - len(R1sequence))
                     R1qscores = R1qscores + R1qscores[len(R1qscores) - 1] * (
                         readlength - len(R1qscores)
@@ -781,7 +781,7 @@ def main(
                 R1fastq.write("+\n")
                 R1fastq.write(R1qscores + "\n")
 
-                if R2_segments[readname].is_reverse == True:
+                if R2_segments[readname].is_reverse:
                     R2sequence = revcomp(R2_segments[readname].query_sequence)
                     R2qscores = reversed_string(
                         quality_score_encoder(R2_segments[readname].query_qualities)
@@ -791,7 +791,7 @@ def main(
                     R2qscores = quality_score_encoder(
                         R2_segments[readname].query_qualities
                     )
-                if amplicon_flag == True:
+                if amplicon_flag:
                     R2sequence = R2sequence + "N" * (readlength - len(R2sequence))
                     R2qscores = R2qscores + R2qscores[len(R2qscores) - 1] * (
                         readlength - len(R2qscores)
@@ -854,7 +854,7 @@ def configParser(file):
 
         return params
 
-    except:
+    except Exception:
         print("ERROR: Configuration file parsing error")
 
 
@@ -866,7 +866,7 @@ def fileCheck1(file):
             try:
                 start = int(line.split("\t")[1])
                 end = int(line.split("\t")[2])
-            except:
+            except Exception:
                 print("ERROR: Chromosome postions in target bed file are not integers")
                 print(line)
                 print(int(line.split("\t")[1]))
@@ -888,7 +888,7 @@ def fileCheck2(file):
             try:
                 start = int(line.split("\t")[1])
                 end = int(line.split("\t")[2])
-            except:
+            except Exception:
                 print("ERROR: Chromosome postions in target bed file are not integers")
                 print(line)
                 sys.exit(1)
@@ -900,7 +900,7 @@ def fileCheck2(file):
 
             try:
                 mut = str(line.split("\t")[3].split(";")[0])
-            except:
+            except Exception:
                 print(
                     "ERROR: Mutation type in target bed file is not snv (Single Nucleotide Variant), ins (Insertion), del (Deletion) or dup (Duplication)"
                 )
@@ -910,7 +910,7 @@ def fileCheck2(file):
             mutType = []
             for item in ["snv", "ins", "del", "dup", "mix"]:
                 mutType.extend(list(caseIgnore(item)))
-            if not mut in mutType:
+            if mut not in mutType:
                 print(
                     "ERROR: Mutation type in target bed file is not snv (Single Nucleotide Variant), ins (Insertion), del (Deletion) or dup (Duplication)"
                 )
@@ -919,7 +919,7 @@ def fileCheck2(file):
 
             try:
                 maf = float(line.split("\t")[3].split(";")[1])
-            except:
+            except Exception:
                 print(
                     "ERROR: Mutation fraction in target bed file is not a number between 0-1"
                 )
@@ -935,7 +935,7 @@ def fileCheck2(file):
 
             try:
                 alt = str(line.split("\t")[3].split(";")[2])
-            except:
+            except Exception:
                 print(
                     "ERROR: Alternate sequence field in target bed file doesn't exist"
                 )
@@ -950,7 +950,7 @@ def fileCheck2(file):
 
             try:
                 length = line.split("\t")[3].split(";")[3]
-            except:
+            except Exception:
                 print("ERROR: Indel length field in target bed file doesn't exist")
                 print(line)
                 sys.exit(1)
@@ -996,7 +996,7 @@ def insert(sequence, position, insertseq):
         index_seq.insert(position, insertseq)
         newsequence = "".join(index_seq)
         return newsequence[0:sequencelength]
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(position)
@@ -1021,7 +1021,7 @@ def insertAMP(
         newsequence = "".join(index_seq)
         amplicon_pos = checkPosBed(mutation_chrom, mutation_start, amplicon)
 
-        if query.is_reverse == False:
+        if not query.is_reverse:
             extrasequence_start = (
                 mutation_start
                 + sequencelength
@@ -1046,7 +1046,7 @@ def insertAMP(
             newsequence = ("N" * readlength) + extrasequence + newsequence
             return newsequence[(len(newsequence) - readlength) :]
 
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(position)
@@ -1100,7 +1100,7 @@ def deletionAMP(
         sequencelength = len(sequence)
         delendposition = position + dellength
         amplicon_pos = checkPosBed(mutation_chrom, mutation_start, amplicon)
-        if query.is_reverse == False:
+        if not query.is_reverse:
             extrasequence_start = (
                 mutation_start
                 + sequencelength
@@ -1132,7 +1132,7 @@ def deletionAMP(
                 + sequence[delendposition:]
             )
             return newsequence[(len(newsequence) - readlength) :]
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(position)
@@ -1146,9 +1146,7 @@ def deletion(infile, query, genome, mutation_chrom, mutation_start, indellen):
     time_start = datetime.datetime.now().replace(microsecond=0)
     if (query.reference_id == query.next_reference_id) and (query.is_proper_pair):
         mate = infile.mate(query)
-        if (query.is_reverse == False) and (
-            query.reference_start <= mate.reference_start
-        ):
+        if (not query.is_reverse) and (query.reference_start <= mate.reference_start):
             forward = query
             reverse = mate
 
@@ -1161,9 +1159,7 @@ def deletion(infile, query, genome, mutation_chrom, mutation_start, indellen):
             # Retrun first 101 bases from fragment sequence
             return fragments[query.query_name][0 : forward.query_alignment_length]
 
-        elif (query.is_reverse == True) and (
-            query.reference_start >= mate.reference_start
-        ):
+        elif (query.is_reverse) and (query.reference_start >= mate.reference_start):
             forward = mate
             reverse = query
 
@@ -1230,7 +1226,7 @@ def duplication(sequence, position, duplength, genome, mutation_chrom, mutation_
         sequencelength = len(sequence)
         newsequence = sequence[0:position] + dupsequence + sequence[position:]
         return newsequence[0:sequencelength], dupsequence
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(position)
@@ -1256,7 +1252,7 @@ def duplicationAMP(
         dupsequence = dupsequence[:duplength]
         newsequence = sequence[0:position] + dupsequence + sequence[position:]
 
-        if query.is_reverse == False:
+        if not query.is_reverse:
             extrasequence_start = (
                 mutation_start
                 + sequencelength
@@ -1280,7 +1276,7 @@ def duplicationAMP(
             newsequence = ("N" * readlength) + extrasequence + newsequence
             return newsequence[(len(newsequence) - readlength) :], dupsequence
 
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(position)
@@ -1306,18 +1302,11 @@ def snv(sequence, readposition, genome, chrom, chromposition, alt):
         index_seq[readposition - 1] = newbase
         return "".join(index_seq), newbase
 
-    except:
+    except Exception:
         print("Exception.")
         print(sequence)
         print(readposition)
         return sequence
-
-
-def get_mut_location(bedentry):
-    entryitems = bedentry.split("\t")
-    entrychrom = entryitems[0]
-    mutposition = int(entryitems[1]) + (int(entryitems[2]) - int(entryitems[1])) // 2
-    return entrychrom + "\t" + str(mutposition)
 
 
 def readAmpBed(file):
@@ -1348,7 +1337,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.config == None:
+    if args.config is None:
         print
         print(
             "insiM: Genomic In-Silico Mutator Program for Bioinformatics Validation of Clinical Next Generation Sequencing Assays"
@@ -1377,16 +1366,16 @@ if __name__ == "__main__":
     outputfastqname = params["out"]
 
     if (
-        (assay == None)
-        or (bamfile == None)
-        or (targetbed == None)
-        or (mutationtype == None)
-        or (genomefasta == None)
-        or (mutationtype not in list(caseIgnore("mix")) and mutfraction == None)
+        (assay is None)
+        or (bamfile is None)
+        or (targetbed is None)
+        or (mutationtype is None)
+        or (genomefasta is None)
+        or (mutationtype not in list(caseIgnore("mix")) and mutfraction is None)
         or (
             assay in list(caseIgnore("amplicon"))
-            and (amplicon == None)
-            or (readlength == None)
+            and (amplicon is None)
+            or (readlength is None)
         )
     ):
         print
