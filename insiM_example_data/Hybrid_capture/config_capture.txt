@@ -1,9 +1,9 @@
 # Mandatory arguments
-assay = Hybrid_capture
+assay = capture
 bam = capture.chr22.bam
 target = targets_capture.bed
 mutation = mix
-genome = Homo_sapiens.GRCh37.dna.chromosome.22.fasta
+genome = Homo_sapiens.GRCh37.dna.chromosome.22.fa
 
 # Conditional/optional arguments.
 ampliconbed =
